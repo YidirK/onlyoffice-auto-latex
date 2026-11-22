@@ -1,0 +1,24 @@
+{
+  "name": "Auto-LaTeX Equations",
+  "nameLocale": { "fr": "Auto-LaTeX Équations" },
+  "guid": "asc.{7B1D6E3A-5C2F-4F0B-9A1E-3D8C2B6F4A11}",
+  "version": "3.0.0",
+  "variations": [
+    {
+      "description": "Convert $...$ and $$...$$ LaTeX into math equations (button + automatic on paste)",
+      "descriptionLocale": { "fr": "Convertit le LaTeX $...$ et $$...$$ en équations (bouton + automatique au collage)" },
+      "url": "index.html",
+      "icons": ["resources/icon.svg"],
+      "isViewer": false,
+      "EditorsSupport": ["word"],
+      "isVisual": true,
+      "isModal": false,
+      "isInsideMode": true,
+      "isSystem": false,
+      "initDataType": "none",
+      "initData": "",
+      "events": ["onTargetPositionChanged"],
+      "buttons": []
+    }
+  ]
+}

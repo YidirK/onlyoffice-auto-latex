@@ -1,0 +1,40 @@
+name: Build & Release plugin
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate config.json
+        run: python3 -m json.tool plugin/config.json > /dev/null
+
+      - name: Check JavaScript syntax
+        run: node --check plugin/scripts/code.js
+
+      - name: Package .plugin (zip with files at the root)
+        run: |
+          cd plugin
+          zip -r ../auto-latex-equations.plugin . -x "*.DS_Store"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-latex-equations
+          path: auto-latex-equations.plugin
+
+      - name: Create GitHub Release (on tag v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: auto-latex-equations.plugin
+          generate_release_notes: true
