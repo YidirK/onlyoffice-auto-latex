@@ -7,11 +7,34 @@
 
   function $(id) { return document.getElementById(id); }
 
-  function setStatus(msg, cls) {
+
+  function tr(text) {
+    try {
+      if (window.Asc.plugin.tr) return window.Asc.plugin.tr(text);
+    } catch (e) {}
+    return text;
+  }
+
+  var lastStatus = { key: "Ready.", prefix: "", cls: "" };
+
+  function setStatus(key, cls, prefix) {
+    lastStatus = { key: key, prefix: prefix || "", cls: cls || "" };
+    renderStatus();
+  }
+
+  function renderStatus() {
     var s = $("status");
     if (!s) return;
-    s.textContent = msg;
-    s.className = cls || "";
+    s.textContent = lastStatus.prefix + tr(lastStatus.key);
+    s.className = lastStatus.cls;
+  }
+
+  function translateUI() {
+    if ($("title")) $("title").textContent = tr("Auto-LaTeX Equations");
+    if ($("hint")) $("hint").innerHTML = tr("Detects <code>$...$</code> and <code>$$...$$</code> in the text and turns them into equations.");
+    if ($("convertAll")) $("convertAll").textContent = tr("Convert all equations");
+    if ($("autoLabel")) $("autoLabel").textContent = tr("Automatic conversion on paste (panel open)");
+    renderStatus();
   }
 
 
@@ -24,7 +47,7 @@
     window.Asc.plugin.callCommand(function () {
       var doc = Api.GetDocument();
       if (typeof doc.AddMathEquation !== "function") {
-        return { error: "AddMathEquation indisponible : ONLYOFFICE 8.2 ou plus requis." };
+        return { unsupported: true };
       }
 
       var skipList = Asc.scope.skip || {};
@@ -73,12 +96,16 @@
       running = false;
       $("convertAll").disabled = false;
 
-      if (!res) { setStatus("Aucune réponse de l'éditeur.", "err"); return; }
-      if (res.error) { setStatus(res.error, "err"); return; }
-      if (res.count > 0) setStatus(res.count + " équation(s) convertie(s).", "ok");
-      else if (manual) setStatus("Aucune équation $...$ ou $$...$$ trouvée.");
+      if (!res) { setStatus("No response from the editor.", "err"); return; }
+      if (res.unsupported) { setStatus("AddMathEquation is not available: ONLYOFFICE 8.2 or later is required.", "err"); return; }
+
       if (res.failed && res.failed.length) {
-        setStatus((res.count || 0) + " convertie(s), " + res.failed.length + " ignorée(s).", "err");
+        $("status").textContent = res.count + " " + tr("equation(s) converted.") + " " + res.failed.length + " " + tr("ignored.");
+        $("status").className = "err";
+      } else if (res.count > 0) {
+        setStatus("equation(s) converted.", "ok", res.count + " ");
+      } else if (manual) {
+        setStatus("No $...$ or $$...$$ equation found.");
       }
     });
   }
@@ -91,9 +118,10 @@
   }
 
   window.Asc.plugin.init = function () {
+    translateUI();
     $("convertAll").onclick = function () { skip = {}; convert(true); };
     $("auto").onchange = function () {
-      setStatus(this.checked ? "Conversion automatique activée." : "Conversion automatique désactivée.");
+      setStatus(this.checked ? "Automatic conversion enabled." : "Automatic conversion disabled.");
       if (this.checked) convert(false);
     };
 
@@ -105,6 +133,11 @@
 
   window.Asc.plugin.event_onTargetPositionChanged = function () {
     if (typeof window.Asc.plugin.attachEditorEvent !== "function") onCursorMoved();
+  };
+
+
+  window.Asc.plugin.onTranslate = function () {
+    translateUI();
   };
 
 
