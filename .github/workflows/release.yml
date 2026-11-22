@@ -15,11 +15,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate config.json
-        run: python3 -m json.tool plugin/config.json > /dev/null
+      - name: Validate JSON files
+        run: |
+          python3 -m json.tool plugin/config.json > /dev/null
+          for f in plugin/translations/*.json; do python3 -m json.tool "$f" > /dev/null; done
+
+      - name: Check referenced icons exist
+        run: |
+          python3 - << 'PY'
+          import json, os
+          cfg = json.load(open("plugin/config.json", encoding="utf-8"))
+          v = cfg["variations"][0]
+          paths = list(v["icons"])
+          for theme in v.get("icons2", []):
+              paths += [x["normal"] for k, x in theme.items() if isinstance(x, dict)]
+          missing = [p for p in paths if not os.path.exists(os.path.join("plugin", p))]
+          assert not missing, f"Missing icons: {missing}"
+          print("Icons OK:", len(paths))
+          PY
 
       - name: Check JavaScript syntax
-        run: node --check plugin/scripts/code.js
+        run: node --check plugin/scripts/pluginCode.js
 
       - name: Package .plugin (zip with files at the root)
         run: |
