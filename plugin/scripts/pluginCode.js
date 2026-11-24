@@ -110,6 +110,7 @@
     });
   }
 
+
   function onCursorMoved() {
     if (!$("auto") || !$("auto").checked) return;
     if (running || Date.now() < ignoreUntil) return;

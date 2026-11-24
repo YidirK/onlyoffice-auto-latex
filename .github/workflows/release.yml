@@ -20,6 +20,23 @@ jobs:
           python3 -m json.tool plugin/config.json > /dev/null
           for f in plugin/translations/*.json; do python3 -m json.tool "$f" > /dev/null; done
 
+      - name: Check required marketplace files and fields
+        run: |
+          for f in config.json index.html scripts/pluginCode.js CHANGELOG.md; do
+            test -f "plugin/$f" || { echo "Missing plugin/$f"; exit 1; }
+          done
+          python3 - << 'PY'
+          import json, re
+          c = json.load(open("plugin/config.json", encoding="utf-8"))
+          assert re.fullmatch(r"\d+\.\d+\.\d+", c["version"]), "version must be x.x.x"
+          assert c.get("offered"), "missing 'offered'"
+          st = c["variations"][0].get("store", {})
+          for k in ("background", "icons", "categories"):
+              assert k in st, f"missing store.{k}"
+          if "screenshots" not in st:
+              print("::warning::store.screenshots is missing (required for plugins with an interface)")
+          PY
+
       - name: Check referenced icons exist
         run: |
           python3 - << 'PY'
